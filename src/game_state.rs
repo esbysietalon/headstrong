@@ -55,11 +55,11 @@ impl SimpleState for LoadingState{
             }
         }else{
             let thr = thread::spawn(move || {
-                let mut data = conf_ref.try_lock();
+                let data = conf_ref.try_lock();
                 match data {
                     Err(_) => None,
                     Ok(mut x) => {
-                        if((*load).load(Ordering::Relaxed)){
+                        if (*load).load(Ordering::Relaxed) {
                             None
                         }else{
                             println!("Starting load thread!");
@@ -67,11 +67,7 @@ impl SimpleState for LoadingState{
                                 .expect("Error reading config file");
                             let loaded: Config = from_str(&contents)
                                 .expect("Error loading config file");
-                            
-                            thread::sleep_ms(10000);
-                            //println!("{:?}", x);
                             (*x).replace(loaded);
-                            //println!("{:?}", x);
                             println!("Loaded!");
                             (*load).store(true, Ordering::Relaxed);
                             Some(true)
@@ -80,7 +76,20 @@ impl SimpleState for LoadingState{
                 }
             });
 
-            Trans::None
+            if (*self.loading).load(Ordering::Relaxed) {
+                match self.config.try_lock(){
+                    Err(_) => Trans::None,
+                    x => {
+                        thr.join().expect("Error encountered while joining thread");
+                        self.use_config = *(*x.unwrap()).as_ref().unwrap();
+                        println!("Loaded config: {:?}", self.use_config);
+                        Trans::Quit
+                    }
+                }
+            }else{
+                println!("Loading..");
+                Trans::None
+            }
         }
     }
     fn on_stop(&mut self, _data: StateData<'_, GameData<'_, '_>>){
