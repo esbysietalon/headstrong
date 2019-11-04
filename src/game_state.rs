@@ -80,20 +80,7 @@ impl SimpleState for LoadingState{
                 }
             });
 
-            if (*self.loading).load(Ordering::Relaxed) {
-                match self.config.try_lock(){
-                    Err(_) => Trans::None,
-                    x => {
-                        thr.join().expect("Error encountered while joining thread");
-                        self.use_config = *(*x.unwrap()).as_ref().unwrap();
-                        println!("Loaded config: {:?}", self.use_config);
-                        Trans::Quit
-                    }
-                }
-            }else{
-                //println!("Loading..");
-                Trans::None
-            }
+            Trans::None
         }
     }
     fn on_stop(&mut self, _data: StateData<'_, GameData<'_, '_>>){
