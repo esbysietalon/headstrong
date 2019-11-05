@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate lazy_static;
 extern crate amethyst;
 
 mod game_state;

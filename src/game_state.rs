@@ -24,6 +24,11 @@ pub struct Config{
     stage_width: f32
 }
 
+lazy_static!{
+    static ref GCONFIG: Config = Config { stage_height: 0.0, stage_width: 0.0};
+}
+
+
 #[derive(Default)]
 pub struct LoadingState{
     pub config_path: String,
@@ -32,8 +37,28 @@ pub struct LoadingState{
     pub loading: Arc<AtomicBool>,
 }
 
+#[derive(Default)]
+pub struct PlayState{
 
-impl SimpleState for LoadingState{
+}
+
+fn initialise_camera(world: &mut World) {
+    // Setup camera in a way that our screen covers whole arena and (0, 0) is in the bottom left. 
+    let mut transform = Transform::default();
+
+    let s_w = GCONFIG.stage_width;
+    let s_h = GCONFIG.stage_height;
+    
+    transform.set_translation_xyz(s_w * 0.5, s_h * 0.5, 1.0);
+
+    world
+        .create_entity()
+        .with(Camera::standard_2d(s_w, s_h))
+        .with(transform)
+        .build();
+}
+
+impl SimpleState for LoadingState {
     fn on_start(&mut self, _data: StateData<'_, GameData<'_, '_>>){
         self.loading = Arc::new(AtomicBool::new(false));
         self.config = Arc::new(Mutex::new(None));
@@ -94,5 +119,13 @@ impl SimpleState for LoadingState{
     }
     fn on_stop(&mut self, _data: StateData<'_, GameData<'_, '_>>){
         println!("Stopped loading");
+    }
+}
+
+impl SimpleState for PlayState {
+    fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>){
+        let world = data.world;
+        
+        initialise_camera(world);
     }
 }

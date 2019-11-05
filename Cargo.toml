@@ -10,3 +10,4 @@ edition = "2018"
 amethyst = {version = "0.12", features = ["vulkan"]}
 ron = "0.5.1"
 serde = "1.0.102"
+lazy_static = "1.4.0"
