@@ -4,13 +4,14 @@ extern crate amethyst;
 
 mod game_state;
 
-use game_state::LoadingState;
+use game_state::*;
 
 use amethyst::{
     Logger,
     GameDataBuilder,
     Application,
 
+    core::TransformBundle,
     renderer::{
         plugins::{RenderFlat2D, RenderToWindow},
         types::DefaultBackend, 
@@ -29,6 +30,7 @@ fn main() -> amethyst::Result<()> {
     let game_config_path = app_root.join("config").join("globals.ron");
 
     let game_data = GameDataBuilder::default()
+        .with_bundle(TransformBundle::new())?
         .with_bundle(
         RenderingBundle::<DefaultBackend>::new()
             // The RenderToWindow plugin provides all the scaffolding for opening a window and drawing on it
@@ -43,9 +45,7 @@ fn main() -> amethyst::Result<()> {
     let mut load_state = LoadingState::default();
     load_state.config_path = game_config_path.to_str().unwrap().to_string();
 
-    let mut game = Application::build("./", load_state)?
-        .build(game_data)?;
-
+    let mut game = Application::new(app_root, load_state, game_data)?;
     game.run();
     
     Ok(())

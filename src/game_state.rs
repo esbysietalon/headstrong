@@ -4,7 +4,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::fs;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
@@ -12,12 +12,41 @@ use serde::Deserialize;
 use ron::de::from_str;
 
 use amethyst::{
-    assets::{AssetStorage, Loader, Handle},
+    assets::{AssetStorage, Handle, Loader},
     core::transform::Transform,
-    ecs::prelude::{Component, DenseVecStorage},
+    ecs::prelude::{Component, VecStorage},
     prelude::*,
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
 };
+
+pub const PADDLE_HEIGHT: f32 = 16.0;
+pub const PADDLE_WIDTH: f32 = 4.0;
+
+#[derive(PartialEq, Eq)]
+pub enum Side{
+    Left,
+    Right,
+}
+
+pub struct Paddle{
+    pub side: Side,
+    pub width: f32,
+    pub height: f32,
+}
+
+impl Paddle{
+    fn new(side: Side) -> Paddle {
+        Paddle {
+            side,
+            width: PADDLE_WIDTH,
+            height: PADDLE_HEIGHT,
+        }
+    }
+}
+
+impl Component for Paddle{
+    type Storage = VecStorage<Self>;
+}
 
 #[derive(Copy, Clone, Debug, Deserialize, Default)]
 pub struct Config{
@@ -25,16 +54,11 @@ pub struct Config{
     stage_width: f32
 }
 
-lazy_static!{
-    static ref GCONFIG: Mutex<Config> = Mutex::new(Config { stage_height: 0.0, stage_width: 0.0});
-}
-
-
 #[derive(Default)]
 pub struct LoadingState{
     pub config_path: String,
     pub loading: Arc<AtomicBool>,
-    pub load_thread: Option<JoinHandle<()>>,
+    pub load_thread: Option<JoinHandle<(Config)>>,
 }
 
 #[derive(Default)]
@@ -43,12 +67,11 @@ pub struct PlayState{
 }
 
 fn initialise_camera(world: &mut World) {
-    // Setup camera in a way that our screen covers whole arena and (0, 0) is in the bottom left. 
     let mut transform = Transform::default();
-
-    let s_w = GCONFIG.lock().unwrap().stage_width;
-    let s_h = GCONFIG.lock().unwrap().stage_height;
     
+    let s_w = world.read_resource::<Config>().stage_width;
+    let s_h = world.read_resource::<Config>().stage_height;
+
     transform.set_translation_xyz(s_w * 0.5, s_h * 0.5, 1.0);
 
     world
@@ -57,6 +80,58 @@ fn initialise_camera(world: &mut World) {
         .with(transform)
         .build();
 }
+
+fn initialise_paddles(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
+    let mut left_transform = Transform::default();
+    let mut right_transform = Transform::default();
+
+    let y = world.read_resource::<Config>().stage_height / 2.0;
+    left_transform.set_translation_xyz(PADDLE_WIDTH * 0.5, y, 0.0);
+    right_transform.set_translation_xyz(world.read_resource::<Config>().stage_width - PADDLE_WIDTH * 0.5, y, 0.0);
+
+    let sprite_render = SpriteRender {
+        sprite_sheet: sprite_sheet.clone(),
+        sprite_number: 0,
+    };
+
+    world
+        .create_entity()
+        .with(sprite_render.clone())
+        .with(Paddle::new(Side::Left))
+        .with(left_transform)
+        .build();
+    
+    world
+        .create_entity()
+        .with(sprite_render.clone())
+        .with(Paddle::new(Side::Right))
+        .with(right_transform)
+        .build();
+}
+
+fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
+    //loading spritesheet
+    let texture_handle = {
+        let loader = world.read_resource::<Loader>();
+        let texture_storage = world.read_resource::<AssetStorage<Texture>>();
+        loader.load(
+            "res/textures/pong_spritesheet.png",
+            ImageFormat::default(),
+            (),
+            &texture_storage,
+        )
+    };
+    
+    let loader = world.read_resource::<Loader>();
+    let sprite_sheet_store = world.read_resource::<AssetStorage<SpriteSheet>>();
+    loader.load(
+        "res/textures/pong_spritesheet.ron",
+        SpriteSheetFormat(texture_handle),
+        (),
+        &sprite_sheet_store,
+    )
+}
+
 
 impl SimpleState for LoadingState {
     fn on_start(&mut self, _data: StateData<'_, GameData<'_, '_>>){
@@ -70,19 +145,21 @@ impl SimpleState for LoadingState {
                     .expect("Error reading config file");
                 let loaded: Config = from_str(&contents)
                     .expect("Error loading config file");
-                GCONFIG.lock().unwrap().stage_width = loaded.stage_width;
-                GCONFIG.lock().unwrap().stage_height = loaded.stage_height;
                 (*load).store(true, Ordering::Relaxed);
                 println!("Loaded!");
+                loaded
+            }else{
+                Config::default()
             }
         }));
         println!("Started loading");
     }
-    fn update(&mut self, _data: &mut StateData<'_, GameData<'_, '_>> ) -> SimpleTrans{
+    fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>> ) -> SimpleTrans{
         if (*self.loading).load(Ordering::Relaxed) {
-            self.load_thread.take().unwrap().join().expect("Error encountered while joining thread");
-            println!("Loaded config: {:?}", GCONFIG.lock().unwrap());
-            Trans::Quit
+            let loaded = self.load_thread.take().unwrap().join().expect("Error encountered while joining thread");
+            println!("Loaded config: {:?}", loaded);
+            data.world.add_resource(loaded);
+            Trans::Switch(Box::new(PlayState::default()))
         }else{
             println!("Loading..");
             Trans::None
@@ -95,8 +172,16 @@ impl SimpleState for LoadingState {
 
 impl SimpleState for PlayState {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>){
+        println!("Entering play state..");
         let world = data.world;
         
+        //get handle to sprite sheet
+        let sprite_sheet_handle = load_sprite_sheet(world);
+
+        //manual register because no Systems use the Paddle Component
+        world.register::<Paddle>();
+
+        initialise_paddles(world, sprite_sheet_handle);
         initialise_camera(world);
     }
 }
