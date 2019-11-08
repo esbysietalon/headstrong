@@ -21,6 +21,8 @@ use amethyst::{
 
 pub const PADDLE_HEIGHT: f32 = 16.0;
 pub const PADDLE_WIDTH: f32 = 4.0;
+pub const ARENA_HEIGHT: f32 = 100.0;
+pub const ARENA_WIDTH: f32 = 100.0;
 
 #[derive(PartialEq, Eq)]
 pub enum Side{
@@ -69,8 +71,8 @@ pub struct PlayState{
 fn initialise_camera(world: &mut World) {
     let mut transform = Transform::default();
     
-    let s_w = world.read_resource::<Config>().stage_width;
-    let s_h = world.read_resource::<Config>().stage_height;
+    let s_w = ARENA_WIDTH;//world.read_resource::<Config>().stage_width;
+    let s_h = ARENA_HEIGHT;//world.read_resource::<Config>().stage_height;
 
     transform.set_translation_xyz(s_w * 0.5, s_h * 0.5, 1.0);
 
@@ -85,9 +87,9 @@ fn initialise_paddles(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
     let mut left_transform = Transform::default();
     let mut right_transform = Transform::default();
 
-    let y = world.read_resource::<Config>().stage_height / 2.0;
+    let y = ARENA_HEIGHT / 2.0;
     left_transform.set_translation_xyz(PADDLE_WIDTH * 0.5, y, 0.0);
-    right_transform.set_translation_xyz(world.read_resource::<Config>().stage_width - PADDLE_WIDTH * 0.5, y, 0.0);
+    right_transform.set_translation_xyz(ARENA_WIDTH - PADDLE_WIDTH * 0.5, y, 0.0);
 
     let sprite_render = SpriteRender {
         sprite_sheet: sprite_sheet.clone(),
