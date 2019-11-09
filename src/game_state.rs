@@ -160,7 +160,7 @@ impl SimpleState for LoadingState {
         if (*self.loading).load(Ordering::Relaxed) {
             let loaded = self.load_thread.take().unwrap().join().expect("Error encountered while joining thread");
             println!("Loaded config: {:?}", loaded);
-            data.world.add_resource(loaded);
+            data.world.insert(loaded);
             Trans::Switch(Box::new(PlayState::default()))
         }else{
             println!("Loading..");
@@ -181,7 +181,7 @@ impl SimpleState for PlayState {
         let sprite_sheet_handle = load_sprite_sheet(world);
 
         //manual register because no Systems use the Paddle Component
-        world.register::<Paddle>();
+        //world.register::<Paddle>();
 
         initialise_paddles(world, sprite_sheet_handle);
         initialise_camera(world);
