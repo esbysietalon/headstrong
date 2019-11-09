@@ -21,8 +21,6 @@ use amethyst::{
 
 pub const PADDLE_HEIGHT: f32 = 16.0;
 pub const PADDLE_WIDTH: f32 = 4.0;
-pub const ARENA_HEIGHT: f32 = 100.0;
-pub const ARENA_WIDTH: f32 = 100.0;
 
 #[derive(PartialEq, Eq)]
 pub enum Side{
@@ -37,11 +35,11 @@ pub struct Paddle{
 }
 
 impl Paddle{
-    fn new(side: Side) -> Paddle {
+    fn new(side: Side, width: f32, height: f32) -> Paddle {
         Paddle {
             side,
-            width: PADDLE_WIDTH,
-            height: PADDLE_HEIGHT,
+            width,
+            height,
         }
     }
 }
@@ -99,14 +97,14 @@ fn initialise_paddles(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
     world
         .create_entity()
         .with(sprite_render.clone())
-        .with(Paddle::new(Side::Left))
+        .with(Paddle::new(Side::Left, PADDLE_WIDTH, PADDLE_HEIGHT))
         .with(left_transform)
         .build();
     
     world
         .create_entity()
         .with(sprite_render.clone())
-        .with(Paddle::new(Side::Right))
+        .with(Paddle::new(Side::Right, PADDLE_WIDTH, PADDLE_HEIGHT))
         .with(right_transform)
         .build();
 }
