@@ -11,3 +11,4 @@ amethyst = {version = "0.13", features = ["vulkan"]}
 ron = "0.5.1"
 serde = "1.0.102"
 lazy_static = "1.4.0"
+png = "0.15.0"
