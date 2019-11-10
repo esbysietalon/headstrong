@@ -22,7 +22,9 @@ use amethyst::{
 
 pub const PADDLE_HEIGHT: f32 = 16.0;
 pub const PADDLE_WIDTH: f32 = 4.0;
-
+pub const BALL_VELOCITY_X: f32 = 75.0;
+pub const BALL_VELOCITY_Y: f32 = 50.0;
+pub const BALL_RADIUS: f32 = 2.0;
 
 
 #[derive(Copy, Clone, Debug, Deserialize, Default)]
@@ -83,6 +85,29 @@ fn initialise_paddles(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
         .with(sprite_render.clone())
         .with(components::Paddle::new(components::Side::Right, PADDLE_WIDTH, PADDLE_HEIGHT))
         .with(right_transform)
+        .build();
+}
+fn initialise_ball(world: &mut World, sprite_sheet_handler: Handle<SpriteSheet>){
+    let mut local_transform = Transform::default();
+
+    let s_w = world.read_resource::<Config>().stage_width;
+    let s_h = world.read_resource::<Config>().stage_height;
+
+    local_transform.set_translation_xyz(s_w / 2.0, s_h / 2.0, 0.0);
+    
+    let sprite_render = SpriteRender {
+        sprite_sheet: sprite_sheet_handler,
+        sprite_number: 1,
+    };
+
+    world
+        .create_entity()
+        .with(sprite_render)
+        .with(components::Ball {
+            radius: BALL_RADIUS,
+            velocity: [BALL_VELOCITY_X, BALL_VELOCITY_Y],
+        })
+        .with(local_transform)
         .build();
 }
 
@@ -156,8 +181,10 @@ impl SimpleState for PlayState {
         let sprite_sheet_handle = load_sprite_sheet(world);
 
         //manual register because no Systems use the Paddle Component
-        //world.register::<Paddle>();
+        world.register::<components::Ball>();
 
+
+        initialise_ball(world, sprite_sheet_handle.clone());
         initialise_paddles(world, sprite_sheet_handle);
         initialise_camera(world);
     }

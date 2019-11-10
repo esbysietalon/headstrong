@@ -37,6 +37,8 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
         .with(systems::PaddleSystem, "paddle_system", &["input_system"])
+        .with(systems::BallSystem, "ball_system", &[])
+        .with(systems::BounceSystem, "ball_bounce_system", &["paddle_system", "ball_system"])
         .with_bundle(
         RenderingBundle::<DefaultBackend>::new()
             // The RenderToWindow plugin provides all the scaffolding for opening a window and drawing on it
