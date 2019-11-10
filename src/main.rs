@@ -32,6 +32,7 @@ fn main() -> amethyst::Result<()> {
     let display_config_path = app_root.join("config").join("display.ron");
     let game_config_path = app_root.join("config").join("globals.ron");
 
+    /*
     let pre_config_path = app_root.join("config").join("config.ron");
     let pre_config_path = pre_config_path.to_str().unwrap();
 
@@ -43,7 +44,8 @@ fn main() -> amethyst::Result<()> {
         .expect("Error loading config file");
 
     generator::generate(conf.sheets, conf.textures, conf.width, conf.height).unwrap();
-
+    */
+    
     Logger::from_config(Default::default())
         .level_for("amethyst_rendy", amethyst::LogLevelFilter::Warn)
         .start();
@@ -53,12 +55,13 @@ fn main() -> amethyst::Result<()> {
     let input_bundle = InputBundle::<StringBindings>::new()
         .with_bindings_from_file(binding_path)?;
 
-    /*let game_data = GameDataBuilder::default()
+    let game_data = GameDataBuilder::default()
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
-        .with(systems::PaddleSystem, "paddle_system", &["input_system"])
-        .with(systems::BallSystem, "ball_system", &[])
-        .with(systems::BounceSystem, "ball_bounce_system", &["paddle_system", "ball_system"])
+        .with(systems::PlayerMoveSystem, "player_move_system", &["input_system"])
+        .with(systems::GenericMoveSystem, "generic_move_system", &[])
+        .with(systems::GenericGoalSystem, "generic_goal_system", &[])
+        .with(systems::SimpleIdle, "simple_idle_system", &[])
         .with_bundle(
         RenderingBundle::<DefaultBackend>::new()
             // The RenderToWindow plugin provides all the scaffolding for opening a window and drawing on it
@@ -74,7 +77,7 @@ fn main() -> amethyst::Result<()> {
     load_state.config_path = game_config_path.to_str().unwrap().to_string();
 
     let mut game = Application::new(app_root, load_state, game_data)?;
-    game.run();*/
+    game.run();
     
     Ok(())
 }
