@@ -25,6 +25,29 @@ pub const PLAYER_WIDTH: f32 = 16.0;
 pub const PLAYER_HEIGHT: f32 = 32.0;
 pub const PERSON_NUM: u32 = 10;
 
+#[derive(Default)]
+pub struct Map{
+    pub width: u32, 
+    pub height: u32,
+    pub left_bound: i32, 
+    pub right_bound: i32, 
+    pub upper_bound: i32, 
+    pub lower_bound: i32,
+}
+
+impl Map {
+    pub fn new(u_b: i32, r_b: i32, d_b: i32, l_b: i32) -> Map {
+        Map {
+            width: (r_b - l_b) as u32,
+            height: (u_b - d_b) as u32,
+            left_bound: l_b,
+            right_bound: r_b,
+            upper_bound: u_b,
+            lower_bound: d_b,
+        }   
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct Config{
     pub stage_height: f32,
@@ -97,6 +120,7 @@ fn initialise_persons(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
             .create_entity()
             .with(sprite_render)
             .with(components::Mover::new(PLAYER_WIDTH, PLAYER_HEIGHT))
+            .with(components::Physical::new(vec![((0, -(PLAYER_HEIGHT as i32)), (0, -(PLAYER_HEIGHT as i32)))]))
             .with(local_transform)
             .build();
     }
@@ -150,8 +174,14 @@ impl SimpleState for LoadingState {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>> ) -> SimpleTrans{
         if (*self.loading).load(Ordering::Relaxed) {
             let loaded = self.load_thread.take().unwrap().join().expect("Error encountered while joining thread");
+            
+            //NOTICE Map is defined here
+            let map = Map::new(loaded.stage_height as i32, loaded.stage_width as i32, 0, 0);
+            
+            
             println!("Loaded config: {:?}", loaded);
             data.world.insert(loaded);
+            data.world.insert(map);
             Trans::Switch(Box::new(PlayState::default()))
         }else{
             println!("Loading..");

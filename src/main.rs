@@ -62,6 +62,7 @@ fn main() -> amethyst::Result<()> {
         .with(systems::GenericMoveSystem, "generic_move_system", &[])
         .with(systems::GenericGoalSystem, "generic_goal_system", &[])
         .with(systems::SimpleIdle, "simple_idle_system", &[])
+        .with(systems::PhysicalSystem, "physical_system", &[])
         .with_bundle(
         RenderingBundle::<DefaultBackend>::new()
             // The RenderToWindow plugin provides all the scaffolding for opening a window and drawing on it
