@@ -1,5 +1,6 @@
 use amethyst::ecs::prelude::{Component, VecStorage};
 
+#[derive(Clone)]
 pub struct Physical{
     taken_space: Vec<(i32, i32)>,
     lines: Vec<((i32, i32), (i32, i32))>,

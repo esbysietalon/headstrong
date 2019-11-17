@@ -4,12 +4,12 @@ use crate::components::{Id, Physical};
 use crate::game_state::Map;
 
 pub struct InputData {
-    id: Id, 
-    obj: Physical, 
-    map: Map,
+    pub id: Id, 
+    pub obj: Physical, 
+    pub map: Map,
 }
 
-pub fn find_path(origin: (i32, i32), end: (i32, i32), d: InputData) -> Vec<(i32, i32)> {
+pub fn find_path(origin: (i32, i32), end: (i32, i32), d: InputData) -> Option<(Vec<(i32, i32)>, u32)> {
     let mut path = Vec::new();
     let mut curr = origin;
 
@@ -22,5 +22,5 @@ pub fn find_path(origin: (i32, i32), end: (i32, i32), d: InputData) -> Vec<(i32,
 
     
 
-    path
+    Some((path, 0))
 }
