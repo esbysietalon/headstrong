@@ -24,6 +24,9 @@ impl<'s> System<'s> for PhysicalSystem{
             let occupado = obj.get_taken_space((transform.translation().x, transform.translation().y));
             
             for (x, y) in occupado {
+                if x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32 {
+                    continue;
+                }
                 let index = (x + y * (map.width as i32)) as usize;
                 
                 map.storage[index] = (1.0, id.clone());

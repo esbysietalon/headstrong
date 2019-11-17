@@ -23,9 +23,9 @@ use amethyst::{
 
 pub const PLAYER_WIDTH: f32 = 16.0;
 pub const PLAYER_HEIGHT: f32 = 32.0;
-pub const PERSON_NUM: u32 = 10;
+pub const PERSON_NUM: u32 = 15;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Map{
     pub width: u32, 
     pub height: u32,

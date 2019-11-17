@@ -17,6 +17,7 @@ pub struct Mover{
     pub jerk: f32,
     pos_goals: PriorityQueue<(i32, i32), Priority>,
     move_vec: Vec<(i32, i32)>,
+    pub session: u32,
 }
 
 impl Mover{
@@ -29,12 +30,13 @@ impl Mover{
             jerk: 5.0,
             pos_goals: PriorityQueue::new(),
             move_vec: Vec::new(),
+            session: 0,
         }
     }
     pub fn diff_move_vec(&self, path: &Vec<(i32, i32)>) -> Vec<(i32, i32)> {
         let mut out = Vec::new();
-        println!("curr vec is {:?}", self.move_vec);
-        println!("diff vec is {:?}", path);
+        //println!("curr vec is {:?}", self.move_vec);
+        //println!("diff vec is {:?}", path);
         for pos in path {
             let mut in_move_vec = false;
             for opos in self.move_vec.clone() {

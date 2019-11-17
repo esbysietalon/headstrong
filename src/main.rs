@@ -59,11 +59,11 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
         .with(systems::PlayerMoveSystem, "player_move_system", &["input_system"])
-        .with(systems::MoveSystem, "move_system", &[])
-        .with(systems::RudderSystem, "rudder_system", &[])
         .with(systems::SimpleIdle, "simple_idle_system", &[])
         .with(systems::PhysicalSystem, "physical_system", &[])
         .with(systems::NavigationSystem, "navigation_system", &[])
+        .with(systems::MoveSystem, "move_system", &[])
+        .with(systems::RudderSystem, "rudder_system", &[])
         .with_bundle(
         RenderingBundle::<DefaultBackend>::new()
             // The RenderToWindow plugin provides all the scaffolding for opening a window and drawing on it

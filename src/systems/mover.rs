@@ -1,7 +1,7 @@
 use amethyst::{
     core::transform::Transform,
     core::timing::Time,
-    ecs::prelude::{Join, Read, ReadStorage, System, SystemData, WriteStorage},
+    ecs::prelude::{Join, Read, ReadStorage, System, SystemData, Write, WriteStorage},
     input::{InputHandler, StringBindings},
 };
 use crate::game_state::{Config, Map};
@@ -22,20 +22,30 @@ impl NavigationSystem{
     }
     pub fn successors(id: &Id, pos: &(i32, i32), obj: &Physical, map: &Map) -> Vec<((i32, i32), u32)> {
         let mut out = Vec::new();
+        //println!("running successors");
         for iy in -1..2 {
             for ix in -1..2 {
+                if ix == 0 && iy == 0 {
+                    continue;
+                }
                 let mut traversable = true;
                 let px = ix + pos.0;
                 let py = iy + pos.1;
                 let vol = obj.get_taken_space((px as f32, py as f32));
                 for (x, y) in vol {
+                    if x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32 {
+                        continue;
+                    }
                     let index = (x + y * map.width as i32) as usize;
                     let (obstruct, owner) = map.storage[index];
 
+                    //println!("successor ({}, {}) has obstruction {} owned by {:?}", x, y, obstruct, owner);
+
                     if obstruct > 0.0 {
-                        println!("successor ({}, {}) has obstruction {} owned by {:?}", x, y, obstruct, owner);
+                        //println!("successor ({}, {}) has obstruction {} owned by {:?}", x, y, obstruct, owner);
                         if owner != *id {
                             traversable = false;
+
                             break;
                         }
                     }
@@ -44,8 +54,15 @@ impl NavigationSystem{
                 if traversable {
                     out.push(((px as i32, py as i32), 1));
                 }
+
+                
             }
         }
+        /*if !(pos.0 < 0 || pos.1 < 0 || pos.0 >= map.width as i32 || pos.1 >= map.height as i32) {
+            let index = (pos.0 + pos.1 * map.width as i32) as usize;
+            //map.storage[index] = (1.0, Id::nil());
+        }*/
+        //println!("successors of {:?} are {:?}", *pos, out);
         out
     }
     pub fn simplify_path(path: Vec<(i32, i32)>) -> Vec<(i32, i32)> {
@@ -107,16 +124,26 @@ impl<'s> System<'s> for NavigationSystem{
         WriteStorage<'s, Mover>,
         ReadStorage<'s, Physical>,
         ReadStorage<'s, Id>,
-        Read<'s, Map>,
+        Write<'s, Map>,
     );
-    fn run(&mut self, (transforms, mut movers, physicals, ids, map): Self::SystemData) {
+    fn run(&mut self, (transforms, mut movers, physicals, ids, mut map): Self::SystemData) {
         for (transform, mover, physical, id) in (&transforms, &mut movers, &physicals, &ids).join() {
+            //let mut local_copy = map.clone();
             match mover.get_goal() {
                 None => mover.set_move_vec(Vec::new()),
                 Some(e) => {
                     if mover.is_move_vec_empty() {
 
-                        let result = astar(&(transform.translation().x as i32, transform.translation().y as i32), |p| NavigationSystem::successors(id, p, physical, &*map), |p| NavigationSystem::distance(p, &e),
+                        let x = transform.translation().x as i32;
+                        let y = transform.translation().y as i32;
+
+                        let index = (x + y * map.width as i32) as usize;
+
+                        if !(x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32) {
+                            map.storage[index] = (1.0, *id);
+                        }
+
+                        let result = astar(&(x, y), |p| NavigationSystem::successors(id, p, physical, &*map), |p| NavigationSystem::distance(p, &e),
                         |p| *p == e);
 
                         match result {
@@ -134,9 +161,27 @@ impl<'s> System<'s> for NavigationSystem{
                         
                         mover.pop_goal();
                     }else{
-                        let result = astar(&(transform.translation().x as i32, transform.translation().y as i32), |p| NavigationSystem::successors(id, p, physical, &*map), |p| NavigationSystem::distance(p, &e),
-                        |p| *p == e);
+                        //TODO revisit in-vector updating of movement
+                        //code below breaks stuff - consider using cheap astar to the next point maybe(?)
+                        //also may be issues with how I'm replacing the move vector
+                        //mover.session += 1;
+                        //if mover.session % 10 == 0 {
+                        
+                        /*let m = mover.get_move().unwrap();
 
+                        let x = transform.translation().x as i32;
+                        let y = transform.translation().y as i32;
+
+                        let index = (x + y * map.width as i32) as usize;
+
+                        if !(x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32) {
+                            map.storage[index] = (1.0, *id);
+                        }
+                        
+
+                        let result = astar(&(0, 0), |p| NavigationSystem::successors(id, p, physical, &*map), |p| NavigationSystem::distance(p, &m),
+                        |p| *p == m);
+                        
                         match result {
                             None => {
                                 //println!("no path found from {:?} to {:?}", (transform.translation().x, transform.translation().y), e);
@@ -147,19 +192,22 @@ impl<'s> System<'s> for NavigationSystem{
                                 //println!("found path with cost {}", cost);
                                 path = NavigationSystem::simplify_path(path);
                                 //println!("path is {:?}", path);
-                                if path.len() > 0 {
+                                /*if path.len() > 0 {
                                     path.remove(0);
-                                }
+                                }*/
                                 
-                                let path_diff = mover.diff_move_vec(&path);
+                                //let path_diff = mover.diff_move_vec(&path);
                                 
                                 //println!("path diff is {:?}", path_diff);
-                                if path_diff.len() > 0 {
+                                /*if path_diff.len() > 0 {
                                     println!("Different path detected.. Replacing");
-                                    mover.set_move_vec(path);
-                                }
+                                    //mover.set_move_vec(path);
+                                }*/
                             }
                         }
+                        */
+                        //}
+
                     }
                 }
             };
@@ -246,7 +294,7 @@ impl<'s> System<'s> for RudderSystem{
                     //println!("dist {}", use_dist);
 
                     if use_dist <= 10.0 {
-                        println!("close enough, popping move");
+                        //println!("close enough, popping move");
                         
                         mover.pop_move();
                     }else{
