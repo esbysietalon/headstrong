@@ -14,7 +14,9 @@ pub struct Mover{
     pub height: f32,
     pub velocity: [f32; 2],
     pub acceleration: [f32; 2],
-    move_goals: PriorityQueue<(i32, i32), Priority>,
+    pub jerk: f32,
+    pos_goals: PriorityQueue<(i32, i32), Priority>,
+    move_vec: Vec<(i32, i32)>,
 }
 
 impl Mover{
@@ -24,22 +26,41 @@ impl Mover{
             height,
             velocity: [0.0, 0.0],
             acceleration: [0.0, 0.0],
-            move_goals: PriorityQueue::new(),
+            jerk: 5.0,
+            pos_goals: PriorityQueue::new(),
+            move_vec: Vec::new(),
         }
     }
-    pub fn add_goal(&mut self, goal: (i32, i32), ord: Priority){
-        self.move_goals.push(goal, ord);
+    pub fn is_move_vec_empty(&self) -> bool {
+        self.move_vec.is_empty()
     }
-    pub fn get_goal(&self) -> Option<(f32, f32)> {
-        let goal = self.move_goals.peek();
+    pub fn set_move_vec(&mut self, vec: Vec<(i32, i32)>) {
+        //println!("setting move vec to {:?}", vec);
+        self.move_vec = vec;
+    }
+    pub fn get_move(&self) -> Option<(i32, i32)> {
+        if self.move_vec.is_empty() {
+            None
+        }else{
+            Some(self.move_vec[0])
+        }
+    }
+    pub fn pop_move(&mut self) {
+        self.move_vec.remove(0);
+    }
+    pub fn add_goal(&mut self, goal: (i32, i32), ord: Priority){
+        self.pos_goals.push(goal, ord);
+    }
+    pub fn get_goal(&self) -> Option<(i32, i32)> {
+        let goal = self.pos_goals.peek();
 
         match goal {
             None => None,
-            Some(((x, y), _)) => Some((*x as f32, *y as f32)),
+            Some(((x, y), _)) => Some((*x, *y)),
         }
     }
     pub fn pop_goal(&mut self) {
-        self.move_goals.pop();
+        self.pos_goals.pop();
     }
          
 }

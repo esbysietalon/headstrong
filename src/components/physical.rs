@@ -1,18 +1,5 @@
 use amethyst::ecs::prelude::{Component, VecStorage};
 
-macro_rules! sign {
-    ($x:expr) => {
-        if $x > 0 {
-            1
-        } else if $x < 0 {
-            -1
-        } else {
-            0
-        }
-    };
-}
-
-
 pub struct Physical{
     taken_space: Vec<(i32, i32)>,
     lines: Vec<((i32, i32), (i32, i32))>,
@@ -67,31 +54,32 @@ impl Physical{
         }
         let mut out_taken_space = Vec::new();
         let mut inside = false;
-        let mut last_sign = 0;
+
         for y in y_min..y_max+1{
             for x in x_min..x_max+1 { 
+                
                 let mut xprodprod:i32 = 1;
+                
                 for ((x0, y0), (x1, y1)) in &lines {
                     let xl = *x1 - *x0;
                     let yl = *y1 - *y0;
                     xprodprod *= xl * y - x * yl;
                 }
- 
-                if last_sign == 0 {
-                    last_sign = sign!(xprodprod);
-                }else{
-                    let new_sign = sign!(xprodprod);
-                    if new_sign != last_sign {
-                        inside = !inside;
-                    }
-                    last_sign = new_sign;
+
+                //println!("xprodprod is {}", xprodprod);
+
+                if xprodprod == 0 {
+                    inside = !inside;
                 }
+            
+                //println!("inside is {}", inside);
 
                 if inside {
                     out_taken_space.push((x, y));
                 }
             }
         }
+        //println!("generated taken space is {:#?}", out_taken_space);
         out_taken_space
     }
     pub fn set_lines(&mut self, lines: Vec<((i32, i32), (i32, i32))>) {

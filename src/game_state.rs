@@ -23,7 +23,7 @@ use amethyst::{
 
 pub const PLAYER_WIDTH: f32 = 16.0;
 pub const PLAYER_HEIGHT: f32 = 32.0;
-pub const PERSON_NUM: u32 = 10;
+pub const PERSON_NUM: u32 = 1;
 
 #[derive(Default)]
 pub struct Map{
@@ -33,6 +33,7 @@ pub struct Map{
     pub right_bound: i32, 
     pub upper_bound: i32, 
     pub lower_bound: i32,
+    pub storage: Vec<(f32, components::Id)>,
 }
 
 impl Map {
@@ -44,6 +45,7 @@ impl Map {
             right_bound: r_b,
             upper_bound: u_b,
             lower_bound: d_b,
+            storage: vec![(0.0, components::Id::nil()); ((r_b - l_b) * (u_b - d_b)) as usize],
         }   
     }
 }
@@ -100,6 +102,7 @@ fn initialise_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
             width: PLAYER_WIDTH,
             height: PLAYER_HEIGHT,
         })
+        .with(components::Id::new())
         .with(local_transform)
         .build();
 }
@@ -120,7 +123,8 @@ fn initialise_persons(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
             .create_entity()
             .with(sprite_render)
             .with(components::Mover::new(PLAYER_WIDTH, PLAYER_HEIGHT))
-            .with(components::Physical::new(vec![((0, -(PLAYER_HEIGHT as i32)), (0, -(PLAYER_HEIGHT as i32)))]))
+            .with(components::Physical::new(vec![((0, (-(PLAYER_HEIGHT / 2.0) as i32)), (0, (-(PLAYER_HEIGHT / 2.0) as i32)))]))
+            .with(components::Id::new())
             .with(local_transform)
             .build();
     }
@@ -169,6 +173,7 @@ impl SimpleState for LoadingState {
                 Config::default()
             }
         }));
+
         println!("Started loading");
     }
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>> ) -> SimpleTrans{
@@ -182,6 +187,9 @@ impl SimpleState for LoadingState {
             println!("Loaded config: {:?}", loaded);
             data.world.insert(loaded);
             data.world.insert(map);
+
+            //data.world.register::<components::Id>();
+
             Trans::Switch(Box::new(PlayState::default()))
         }else{
             println!("Loading..");
