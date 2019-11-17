@@ -31,6 +31,24 @@ impl Mover{
             move_vec: Vec::new(),
         }
     }
+    pub fn diff_move_vec(&self, path: &Vec<(i32, i32)>) -> Vec<(i32, i32)> {
+        let mut out = Vec::new();
+        println!("curr vec is {:?}", self.move_vec);
+        println!("diff vec is {:?}", path);
+        for pos in path {
+            let mut in_move_vec = false;
+            for opos in self.move_vec.clone() {
+                if *pos == opos {
+                    in_move_vec = true;
+                    break;
+                }
+            }
+            if !in_move_vec {
+                out.push(pos.clone());
+            }
+        }
+        out
+    }
     pub fn is_move_vec_empty(&self) -> bool {
         self.move_vec.is_empty()
     }

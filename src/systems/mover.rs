@@ -61,21 +61,33 @@ impl NavigationSystem{
         for (x, y) in path {
             let new_dx = (x - last_pos.0) as f32;
             let new_dy = (y - last_pos.1) as f32;
-            
+            let out_len = out.len();
             
             if last_dx == 0.0 {
                 if new_dx != 0.0 {
                     out.push((x, y));
                     last_slope = new_dy as f32 / new_dx as f32;    
+                }else{
+                    if out_len > 0 {
+                        out[out_len - 1] = (x, y);
+                    }
                 }
             }else if new_dx == 0.0 {
                 if last_dx != 0.0 {
                     out.push((x, y));
+                }else{
+                    if out_len > 0 { 
+                        out[out_len - 1] = (x, y);
+                    }
                 }
             }else{
                 let new_slope = new_dy as f32 / new_dx as f32;
                 if last_slope != new_slope {
                     out.push((x, y));
+                }else{
+                    if out_len > 0 { 
+                        out[out_len - 1] = (x, y);
+                    }
                 }
                 last_slope = new_slope;
             }
@@ -121,6 +133,33 @@ impl<'s> System<'s> for NavigationSystem{
                         }
                         
                         mover.pop_goal();
+                    }else{
+                        let result = astar(&(transform.translation().x as i32, transform.translation().y as i32), |p| NavigationSystem::successors(id, p, physical, &*map), |p| NavigationSystem::distance(p, &e),
+                        |p| *p == e);
+
+                        match result {
+                            None => {
+                                //println!("no path found from {:?} to {:?}", (transform.translation().x, transform.translation().y), e);
+                                //println!("discarding goal..");
+                                mover.pop_goal();
+                            }
+                            Some((mut path, cost)) => {
+                                //println!("found path with cost {}", cost);
+                                path = NavigationSystem::simplify_path(path);
+                                //println!("path is {:?}", path);
+                                if path.len() > 0 {
+                                    path.remove(0);
+                                }
+                                
+                                let path_diff = mover.diff_move_vec(&path);
+                                
+                                //println!("path diff is {:?}", path_diff);
+                                if path_diff.len() > 0 {
+                                    println!("Different path detected.. Replacing");
+                                    mover.set_move_vec(path);
+                                }
+                            }
+                        }
                     }
                 }
             };
