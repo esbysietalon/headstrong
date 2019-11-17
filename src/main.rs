@@ -3,7 +3,7 @@ extern crate amethyst;
 mod game_state;
 mod systems;
 mod components;
-mod generator;
+mod navigation;
 
 use game_state::*;
 

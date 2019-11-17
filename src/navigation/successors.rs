@@ -1,7 +1,7 @@
 use crate::components::{Id, Physical};
 use crate::game_state::Map;
 
-pub fn successors(id: &Id, pos: &(i32, i32), obj: &Physical, map: &Map) -> Vec<((i32, i32), u32)> {
+pub fn successors(pos: &(i32, i32), id: &Id, obj: &Physical, map: &Map) -> Vec<((i32, i32), u32)> {
     let mut out = Vec::new();
     //println!("running successors");
     for iy in -1..2 {
