@@ -6,7 +6,10 @@ use amethyst::{
 };
 use crate::game_state::{Config, Map};
 use crate::components::{Mover, Physical, Id, Priority};
-use crate::navigation::{find_path, InputData};
+use crate::navigation::{find_path, InputData, successors, distance, heuristic};
+
+use pathfinding::prelude::astar;
+
 
 use angular::atan2;
 use rand::Rng;
@@ -97,7 +100,13 @@ impl<'s> System<'s> for NavigationSystem{
                             obj: physical.clone(),
                             map: map.clone(),
                         };
-                        let result = find_path((x, y), e, pathfind_input);
+
+                        //let result = astar(&(x, y), |p| successors(p, id, physical, &*map), |p| heuristic(p, &e),
+                        //|p| *p == e);
+
+                        let result = find_path((100, 100), (200, 200), pathfind_input);
+
+                        //let result = find_path((x, y), e, pathfind_input);
 
                         match result {
                             None => {
@@ -132,7 +141,7 @@ impl<'s> System<'s> for NavigationSystem{
                         }
                         
 
-                        let result = astar(&(0, 0), |p| NavigationSystem::successors(id, p, physical, &*map), |p| NavigationSystem::distance(p, &m),
+                        let result = astar(&(x, y), |p| successors(p, id, physical, &*map), |p| heuristic(p, &m),
                         |p| *p == m);
                         
                         match result {
