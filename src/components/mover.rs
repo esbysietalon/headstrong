@@ -17,7 +17,7 @@ pub struct Mover{
     pub jerk: f32,
     pos_goals: PriorityQueue<(i32, i32), Priority>,
     move_vec: Vec<(i32, i32)>,
-    pub session: u32,
+    pub session: f32,
 }
 
 impl Mover{
@@ -30,7 +30,7 @@ impl Mover{
             jerk: 5.0,
             pos_goals: PriorityQueue::new(),
             move_vec: Vec::new(),
-            session: 0,
+            session: 0.0,
         }
     }
     pub fn diff_move_vec(&self, path: &Vec<(i32, i32)>) -> Vec<(i32, i32)> {

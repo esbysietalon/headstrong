@@ -77,8 +77,10 @@ impl<'s> System<'s> for NavigationSystem{
         ReadStorage<'s, Physical>,
         ReadStorage<'s, Id>,
         Write<'s, Map>,
+        Read<'s, Time>,
     );
-    fn run(&mut self, (transforms, mut movers, physicals, ids, mut map): Self::SystemData) {
+    fn run(&mut self, (transforms, mut movers, physicals, ids, mut map, time): Self::SystemData) {
+        let mut mover_index = 0;
         for (transform, mover, physical, id) in (&transforms, &mut movers, &physicals, &ids).join() {
             //let mut local_copy = map.clone();
             match mover.get_goal() {
@@ -101,10 +103,10 @@ impl<'s> System<'s> for NavigationSystem{
                             map: map.clone(),
                         };
 
-                        //let result = astar(&(x, y), |p| successors(p, id, physical, &*map), |p| heuristic(p, &e),
-                        //|p| *p == e);
+                        let result = astar(&(x, y), |p| successors(p, id, physical, &*map), |p| heuristic(p, &e),
+                        |p| *p == e);
 
-                        let result = find_path((100, 100), (200, 200), pathfind_input);
+                        //let result = find_path((100, 100), (200, 200), pathfind_input);
 
                         //let result = find_path((x, y), e, pathfind_input);
 
@@ -126,53 +128,59 @@ impl<'s> System<'s> for NavigationSystem{
                         //TODO revisit in-vector updating of movement
                         //code below breaks stuff - consider using cheap astar to the next point maybe(?)
                         //also may be issues with how I'm replacing the move vector
-                        //mover.session += 1;
-                        //if mover.session % 10 == 0 {
+                        mover.session += time.delta_seconds();
+                        if mover.session >= 0.5 {
                         
-                        /*let m = mover.get_move().unwrap();
+                            //let m = mover.get_move().unwrap();
 
-                        let x = transform.translation().x as i32;
-                        let y = transform.translation().y as i32;
+                            let x = transform.translation().x as i32;
+                            let y = transform.translation().y as i32;
 
-                        let index = (x + y * map.width as i32) as usize;
+                            let index = (x + y * map.width as i32) as usize;
 
-                        if !(x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32) {
-                            map.storage[index] = (1.0, *id);
-                        }
-                        
-
-                        let result = astar(&(x, y), |p| successors(p, id, physical, &*map), |p| heuristic(p, &m),
-                        |p| *p == m);
-                        
-                        match result {
-                            None => {
-                                //println!("no path found from {:?} to {:?}", (transform.translation().x, transform.translation().y), e);
-                                //println!("discarding goal..");
-                                mover.pop_goal();
+                            if !(x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32) {
+                                map.storage[index] = (1.0, *id);
                             }
-                            Some((mut path, cost)) => {
-                                //println!("found path with cost {}", cost);
-                                path = NavigationSystem::simplify_path(path);
-                                //println!("path is {:?}", path);
-                                /*if path.len() > 0 {
-                                    path.remove(0);
-                                }*/
-                                
-                                //let path_diff = mover.diff_move_vec(&path);
-                                
-                                //println!("path diff is {:?}", path_diff);
-                                /*if path_diff.len() > 0 {
-                                    println!("Different path detected.. Replacing");
-                                    //mover.set_move_vec(path);
-                                }*/
+                            
+
+                            let result = astar(&(x, y), |p| successors(p, id, physical, &*map), |p| heuristic(p, &e),
+                            |p| *p == e);
+                            
+                            match result {
+                                None => {
+                                    //println!("no path found from {:?} to {:?}", (transform.translation().x, transform.translation().y), e);
+                                    //println!("discarding goal..");
+                                    mover.pop_goal();
+                                }
+                                Some((mut path, cost)) => {
+                                    //println!("found path with cost {}", cost);
+                                    path = NavigationSystem::simplify_path(path);
+                                    //println!("path is {:?}", path);
+                                    /*if path.len() > 0 {
+                                        path.remove(0);
+                                    }*/
+                                    
+                                    //let path_diff = mover.diff_move_vec(&path);
+                                    
+                                    //println!("path diff is {:?}", path_diff);
+                                    //if path_diff.len() > 0 {
+                                    //    println!("Different path detected.. Replacing");
+                                    mover.set_move_vec(path);
+                                    //}
+                                }
                             }
+
+                            
+                            //let mut rng = rand::thread_rng();
+                            mover.session = 0.01 * mover_index as f32;
+                        
                         }
-                        */
-                        //}
 
                     }
                 }
             };
+
+            mover_index += 1;
         }
     }
 }
@@ -262,8 +270,8 @@ impl<'s> System<'s> for RudderSystem{
                     }else{
                         let ang = atan2(use_y as f32, use_x as f32);
 
-                        let aim_vel_x = ang.cos() * use_dist.max(200.0);
-                        let aim_vel_y = ang.sin() * use_dist.max(200.0);
+                        let aim_vel_x = ang.cos() * (500.0 as f32).min(use_dist.max(200.0));
+                        let aim_vel_y = ang.sin() * (500.0 as f32).min(use_dist.max(200.0));
 
                         //println!("aim velocity is ({}, {})", aim_vel_x, aim_vel_y);
 
